@@ -158,20 +158,31 @@ class ScanLogResponse(BaseModel):
 # Sorting logic
 # -----------------------------
 def choose_sort_bin(item: Item, location_hint: Optional[str] = None) -> tuple[str, str]:
-    category = item.category.lower()
+    category = item.category.strip().lower()
+    location = location_hint.strip().upper() if location_hint else None
 
-    if category == "electronics":
-        return "BIN-E1", "Electronics always go to BIN-E1"
-    if category == "clothing":
-        return "BIN-C1", "Clothing always goes to BIN-C1"
-    if category == "books":
-        return "BIN-B1", "Books always go to BIN-B1"
-    if category == "fragile":
-        return "BIN-F1", "Fragile items go to BIN-F1"
+    category_map = {
+        "electronics": "E1",
+        "clothing": "C1",
+        "books": "B1",
+        "fragile": "F1",
+        "food": "FD1",
+        "tools": "T1",
+    }
 
-    if location_hint:
-        return f"ZONE-{location_hint.upper()}", f"Used location hint '{location_hint}'"
+    # If both category and location are given, combine them
+    if location and category in category_map:
+        return f"{location}-{category_map[category]}", f"Sorted by location {location} and category {category}"
 
+    # If only category is known
+    if category in category_map:
+        return f"BIN-{category_map[category]}", f"Sorted by category {category}"
+
+    # If only location is known
+    if location:
+        return f"ZONE-{location}", f"Sorted by location {location}"
+
+    # Fallback
     return item.default_bin, "Used item's default bin"
 
 
